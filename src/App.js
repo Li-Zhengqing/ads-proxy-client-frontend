@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import * as echarts from 'echarts';
-import { Button } from '@mui/material';
+import { Button, Card } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -11,7 +11,11 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import FiberSmartRecordIcon from '@mui/icons-material/FiberSmartRecord';
+import DeleteIcon from '@mui/icons-material/Delete';      
 import React from 'react';
+import { render } from '@testing-library/react';
+import { type } from '@testing-library/user-event/dist/type';
+import { Container } from '@mui/system';
 
 class ForceChart extends React.Component {
   constructor(props) {
@@ -20,6 +24,7 @@ class ForceChart extends React.Component {
   componentDidMount() {
     // Temporary Option
     let option = {
+      animation: false,
       xAxis: {
         type: 'category',
         data: this.props.data.x
@@ -36,66 +41,216 @@ class ForceChart extends React.Component {
       ]
     };
 
-    let chart = echarts.init(document.getElementById(this.props.chartId));
-    chart.setOption(option);
+    this.chart = echarts.init(document.getElementById(this.props.chartId));
+    this.chart.setOption(option);
   }
   render() {
+    let option = {
+      animation: false,
+      xAxis: {
+        type: 'category',
+        data: this.props.data.x
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        {
+          data: this.props.data.y,
+          type: 'line',
+          color: this.props.color
+        }
+      ]
+    };
+
+    // FIXME: Not so elegant, maybe can be solve by using a timer
+    if (this.chart !== undefined) {
+      this.chart.setOption(option);
+    }
     return (
-      <div id={this.props.chartId} style={{width: 700, height: 300}}></div>
+      <div id={this.props.chartId} style={{width: 500, height: 300}}></div>
     );
   }
 }
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-      <AppBar>
-        <Toolbar>
-          <Typography variant="h5" component="h5">Cutting Force Monitor</Typography>
-        </Toolbar>
-      </AppBar>
-      <Button variant="contained" color="success" size="large">
-        Start
-        <PlayArrowIcon></PlayArrowIcon>  
-      </Button>
-      <Button variant="contained" color="error" size="large">
-        Stop
-        <StopIcon></StopIcon>
-      </Button>
-      <Button variant="contained" color="warning" size="large">
-        Record
-        <FiberManualRecordIcon></FiberManualRecordIcon>
-      </Button>
-      <Stack horizon="row" spacing={2}>
-        <ForceChart chartId="Fc" data={{
-          x: [1, 2, 3, 4, 5, 6, 7],
-          y: [150, 230, 224, 218, 135, 147, 260]
-        }} color="#ff0000"></ForceChart>
-        <ForceChart chartId="Ff" data={{
-          x: [1, 2, 3, 4, 5, 6, 7],
-          y: [150, 230, 224, 218, 135, 147, 260]
-        }} color="#0000ff"></ForceChart>
-        <ForceChart chartId="Fp" data={{
-          x: [1, 2, 3, 4, 5, 6, 7],
-          y: [150, 230, 224, 218, 135, 147, 260]
-        }} color="#00ff00"></ForceChart>
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.updateRate = 100;
+    this.state = {
+      running: true,
+      recording: false,
+      t: [],
+      fc: [],
+      ff: [],
+      fp: []
+    }
+    this.startMonitor = this.startMonitor.bind(this);
+    this.stopMonitor = this.stopMonitor.bind(this);
+    this.clearRecord = this.clearRecord.bind(this);
+  }
+  componentDidMount() {
+    // FIXME: It seems that the update rate cannot be reach if set too high.
+    this.setState({
+      running: true,
+      recording: false,
+    });
+    this.timerID = setInterval(
+      () => this.tick(),
+      this.updateRate
+    );
+  }
+  componentWillUnmount() {
+    this.setState({
+      running: false,
+      recording: false
+    });
+    clearInterval(this.timerID);
+  }
+  startMonitor() {
+    // TODO:
+    if (!this.state.running) {
+      this.setState({
+        running: true
+      })
+      this.timerID = setInterval(
+        () => this.tick(),
+        this.updateRate
+      );
+      console.log("Started!");
+      // TODO: Clear old record
+    }
+  }
+  stopMonitor() {
+    // TODO:
+    if (this.state.running) {
+      this.setState({
+        running: false
+      });
+      clearInterval(this.timerID);
+      console.log("Stopped!")
+    }
+  }
+  clearRecord() {
+    this.setState({
+      t: [],
+      fc: [],
+      ff: [],
+      fp: []
+    });
+  }
+  tick() {
+    // NOTE: Update data here!
+    this.setState((state, props) => {
+      const old_t = state.t[state.t.length - 1];
+      let new_t = old_t + 1;
+      if (isNaN(new_t)) {
+        new_t = 0;
+      }
+      console.log(this.state);
+      return {
+        running: state.running,
+        recording: state.recording,
+        t: state.t.concat([new_t]),
+        fc: state.fc.concat([new_t]),
+        ff: state.ff.concat([new_t]),
+        fp: state.fp.concat([new_t])
+      };
+    });
+  }
+  render() {
+    // TODO: Main Window
+    // let mainData = null;
+    return (
+      <div className="App">
+        { /* Generated by create-react-app */
+        <header className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
+          <p>
+            Edit <code>src/App.js</code> and save to reload.
+          </p>
+          <a
+            className="App-link"
+            href="https://reactjs.org"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Learn React
+          </a>
+        </header>
+        }
+        <AppBar>
+          <Toolbar>
+            <Typography variant="h5" component="h5">Cutting Force Monitor</Typography>
+          </Toolbar>
+        </AppBar>
+        <Stack spacing={2}>
+        <Container maxWidth="sm">
+        <Stack direction="row" spacing={2}>
+          <Button variant="contained" color="success" size="large" onClick={this.startMonitor}>
+            Start
+            <PlayArrowIcon></PlayArrowIcon>  
+          </Button>
+          <Button variant="contained" color="error" size="large" onClick={this.stopMonitor}>
+            Stop
+            <StopIcon></StopIcon>
+          </Button>
+          <Button variant="contained" color="warning" size="large" onClick={this.clearRecord}>
+            Clear
+            <DeleteIcon></DeleteIcon>
+          </Button>
+          <Button variant="contained" color="info" size="large">
+            Record
+            <FiberManualRecordIcon></FiberManualRecordIcon>
+          </Button>
+        </Stack>
+        </Container>
+
+          { /*}
+          <ForceChart chartId="Fc" data={{
+            x: [1, 2, 3, 4, 5, 6, 7],
+            y: [150, 230, 224, 218, 135, 147, 260]
+          }} color="#ff0000"></ForceChart>
+          <ForceChart chartId="Ff" data={{
+            x: [1, 2, 3, 4, 5, 6, 7],
+            y: [150, 230, 224, 218, 135, 147, 260]
+          }} color="#0000ff"></ForceChart>
+          <ForceChart chartId="Fp" data={{
+            x: [1, 2, 3, 4, 5, 6, 7],
+            y: [150, 230, 224, 218, 135, 147, 260]
+          }} color="#00ff00"></ForceChart>
+        */ }
+        <Container maxWidth="xl">
+          <Card>
+            <ForceChart chartId="main" data={{
+              
+            }}></ForceChart>
+          </Card>
+        <Stack direction="row" spacing={2}>
+        <Card variant='outlined'>
+          <ForceChart chartId="Fc" data={{
+            x: this.state.t,
+            y: this.state.fc
+          }} color="#ff0000"></ForceChart>
+        </Card>
+        <Card variant='outlined'>
+          <ForceChart chartId="Ff" data={{
+            x: this.state.t,
+            y: this.state.ff
+          }} color="#0000ff"></ForceChart>
+        </Card>
+        <Card variant='outlined'>
+          <ForceChart chartId="Fp" data={{
+            x: this.state.t,
+            y: this.state.fp
+          }} color="#00ff00"></ForceChart>
+        </Card>
+        </Stack>
+        </Container>
       </Stack>
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
 export default App;
