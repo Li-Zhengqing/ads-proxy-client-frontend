@@ -1,10 +1,10 @@
 import logo from './logo.svg';
 import './App.css';
-import { Button, Card } from '@mui/material';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
+import { Button, Card, AppBar, Toolbar, Typography, Stack, Grid, Paper } from '@mui/material';
+// import AppBar from '@mui/material/AppBar';
+// import Toolbar from '@mui/material/Toolbar';
+// import Typography from '@mui/material/Typography';
+// import Stack from '@mui/material/Stack';
 // import Icon from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
@@ -18,36 +18,37 @@ import { Container } from '@mui/system';
 
 // User Defined Components
 import ForceChart from './ForceChart';
+import Panel from './Panel';
 import Clock from './Clock';
 
 class App extends React.Component {
+  /**
+   * TODO: 
+   * 1. Connection to backend server
+   * 2. Refine application interface
+   * 3. Download data file from server
+   */
   constructor(props) {
     super(props);
     this.updateRate = 200;
-    this.chartSize = {
-      width: 485,
-      // width: 500,
-      height: 300
-    };
-    this.mainChartSize = {
-      width: 1200,
-      // height: 600
-      height: 400
-    };
+    this.setChartSize();
     this.state = {
       running: true,
       recording: false,
       t: [],
       fc: [],
       ff: [],
-      fp: []
+      fp: [],
+      fileFormat: "csv"
     }
     this.startMonitor = this.startMonitor.bind(this);
     this.stopMonitor = this.stopMonitor.bind(this);
     this.clearRecord = this.clearRecord.bind(this);
     this.startRecord = this.startRecord.bind(this);
     this.stopRecord = this.stopRecord.bind(this);
+    this.fileFormatSelect = this.fileFormatSelect.bind(this);
   }
+
   componentDidMount() {
     // FIXME: It seems that the update rate cannot be reach if set too high.
     this.setState({
@@ -59,6 +60,7 @@ class App extends React.Component {
       this.updateRate
     );
   }
+
   componentWillUnmount() {
     this.setState({
       running: false,
@@ -66,8 +68,33 @@ class App extends React.Component {
     });
     clearInterval(this.timerID);
   }
+  
+  // User defined methods
+  setChartSize() {
+    // FIXME: something seems wrong makes auto-resizing not available, for charts resizing, forced-refresh the page is needed
+    this.pageSize = {
+      width: document.body.clientWidth,
+      height: document.body.clientHeight
+    };
+    this.scaleFactor = this.pageSize.width / 1536;
+    // alert(`Page Size: ${this.pageSize.width} x ${this.pageSize.height}`);
+    this.chartSize = {
+      width: 485 * this.scaleFactor,
+      // width: 500,
+      // height: 300 * this.scaleFactor
+      height: 300
+    };
+    this.mainChartSize = {
+      width: 1100 * this.scaleFactor,
+      // height: 600
+      // height: 400 * this.scaleFactor
+      height: 400
+    };
+    // alert(`chartSize = ${this.chartSize.width}x${this.chartSize.height}}`);
+  }
+  
   startMonitor() {
-    // TODO:
+    // NOTE: Start Monitor
     if (!this.state.running) {
       this.setState({
         running: true
@@ -80,8 +107,9 @@ class App extends React.Component {
       // TODO: Clear old record
     }
   }
+
   stopMonitor() {
-    // TODO:
+    // NOTE: Stop Monitor
     if (this.state.recording) {
       this.stopRecord();
     }
@@ -93,6 +121,7 @@ class App extends React.Component {
       console.log("Stopped!");
     }
   }
+
   clearRecord() {
     this.setState({
       t: [],
@@ -101,8 +130,9 @@ class App extends React.Component {
       fp: []
     });
   }
+
   startRecord() {
-    // TODO: Start Recording
+    // NOTE: Start Recording
     if (!this.state.running) {
       this.startMonitor();
     }
@@ -112,8 +142,9 @@ class App extends React.Component {
     this.recordStartTime = new Date();
     this.recordStartIndex = this.state.t.length;
   }
+
   stopRecord() {
-    // TODO: Stop Recording
+    // NOTE: Stop Recording
     if (this.state.running && this.state.recording) {
       this.setState({
         recording: false
@@ -123,6 +154,13 @@ class App extends React.Component {
       alert(`[Test]: ${this.recordStartTime.toLocaleString()} - ${this.recordEndTime.toLocaleString()} (${this.recordEndTime - this.recordStartTime}): Record Length = ${this.recordEndIndex - this.recordStartIndex}`);
     }
   }
+
+  fileFormatSelect(value) {
+    this.setState({
+      fileFormat: value
+    });
+  }
+
   tick() {
     // NOTE: Update data here!
     this.setState((state, props) => {
@@ -138,17 +176,18 @@ class App extends React.Component {
         t: state.t.concat([new_t]),
         fc: state.fc.concat([new_t]),
         ff: state.ff.concat([0.5 * new_t]),
-        fp: state.fp.concat([0.2 * new_t])
+        fp: state.fp.concat([0.2 * new_t]),
+        fileFormat: state.fileFormat
       };
     });
   }
+
+  // Render the component
   render() {
-    // TODO: Main Window
-    // let mainData = null;
     return (
       <div className="App">
         { /* Generated by create-react-app */
-        <header className="App-header">
+        /* <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <p>
             Edit <code>src/App.js</code> and save to reload.
@@ -161,14 +200,20 @@ class App extends React.Component {
           >
             Learn React
           </a>
-        </header>
+        </header> */
         }
-        <AppBar>
+        <AppBar position="static">
           <Toolbar>
             <Typography variant="h5" component="h5">Cutting Force Monitor</Typography>
+            {
+              // <Clock />
+            }
           </Toolbar>
         </AppBar>
-        <Stack spacing={2}>
+        <Paper>
+        <Stack direction="column" spacing={2}>
+        
+        { /*
         <Container maxWidth="sm">
         <Stack direction="row" spacing={2}>
           <Clock />
@@ -186,10 +231,14 @@ class App extends React.Component {
           </Button>
           <Button variant="contained" color={this.state.recording ? "info" : "action"} size="large" onClick={this.state.recording ? this.stopRecord : this.startRecord}>
             Record
-            <FiberManualRecordIcon></FiberManualRecordIcon>
+            { this.state.recording ? 
+              <FiberSmartRecordIcon /> : <FiberManualRecordIcon />
+              // <FiberManualRecordIcon></FiberManualRecordIcon>
+            }
           </Button>
         </Stack>
         </Container>
+          */ }
 
           { /*}
           <ForceChart chartId="Fc" data={{
@@ -206,24 +255,44 @@ class App extends React.Component {
           }} color="#00ff00"></ForceChart>
         */ }
         <Container maxWidth="xl">
-          <Card>
-            <ForceChart chartId="main" data={{
-              x: this.state.t,
-              y: [{
-                name: "fc",
-                data: this.state.fc,
-                color: "#ff0000"
-              }, {
-                name: "ff",
-                data: this.state.ff,
-                color: "#0000ff"
-              }, {
-                name: "fp",
-                data: this.state.fp,
-                color: "#00ff00"
-              }]
-            }} title='Force' size={this.mainChartSize}></ForceChart>
-          </Card>
+          <Grid container spacing={1}>
+            <Grid item xs={9}>
+              <Card>
+                <ForceChart chartId="main" data={{
+                  x: this.state.t,
+                  y: [{
+                    name: "fc",
+                    data: this.state.fc,
+                    color: "#ff0000"
+                  }, {
+                    name: "ff",
+                    data: this.state.ff,
+                    color: "#0000ff"
+                  }, {
+                    name: "fp",
+                    data: this.state.fp,
+                    color: "#00ff00"
+                  }]
+                }} title='Force' size={this.mainChartSize}></ForceChart>
+              </Card>
+            </Grid>
+            <Grid item xs={3}>
+              <Card>
+                <Panel 
+                running={this.state.running}
+                recording={this.state.recording}
+                startMonitor={this.startMonitor}
+                stopMonitor={this.stopMonitor}
+                clearRecord={this.clearRecord}
+                startRecord={this.startRecord}
+                stopRecord={this.stopRecord}
+                fileFormatSelect={this.fileFormatSelect}
+                />
+              </Card>
+            </Grid>
+          {
+            // </Grid>
+          }
           { /* <Stack direction="row" spacing={1}>
           <Card variant='outlined'>
             <ForceChart chartId="Fc" data={{
@@ -245,37 +314,52 @@ class App extends React.Component {
           </Card>
           </Stack> */}
 
-          <Stack direction="row" spacing={1}>
-          <Card variant='outlined'>
-            <ForceChart chartId="Fc" data={{
-              x: this.state.t,
-              y: [{
-                data: this.state.fc,
-                color: "#ff0000"
-              }]
-            }} title='Fc' size={this.chartSize}></ForceChart>
-          </Card>
-          <Card variant='outlined'>
-            <ForceChart chartId="Ff" data={{
-              x: this.state.t,
-              y: [{
-                data: this.state.ff,
-                color: "#0000ff"
-              }]
-            }} title='Ff' size={this.chartSize}></ForceChart>
-          </Card>
-          <Card variant='outlined'>
-            <ForceChart chartId="Fp" data={{
-              x: this.state.t,
-              y: [{
-                data: this.state.fp,
-                color: "#00ff00"
-              }]
-            }} title='Fp' size={this.chartSize}></ForceChart>
-          </Card>
-          </Stack>
-          </Container>
+          {
+            // <Stack direction="row" spacing={1}>
+          }
+          {
+            // <Grid container spacing={1}>
+          }
+            <Grid item xs={4}>
+              <Card variant='outlined'>
+                <ForceChart chartId="Fc" data={{
+                  x: this.state.t,
+                  y: [{
+                    data: this.state.fc,
+                    color: "#ff0000"
+                  }]
+                }} title='Fc' size={this.chartSize}></ForceChart>
+              </Card>
+            </Grid>
+            <Grid item xs={4}>
+              <Card variant='outlined'>
+                <ForceChart chartId="Ff" data={{
+                  x: this.state.t,
+                  y: [{
+                    data: this.state.ff,
+                    color: "#0000ff"
+                  }]
+                }} title='Ff' size={this.chartSize}></ForceChart>
+              </Card>
+            </Grid>
+            <Grid item xs={4}>
+              <Card variant='outlined'>
+                <ForceChart chartId="Fp" data={{
+                  x: this.state.t,
+                  y: [{
+                    data: this.state.fp,
+                    color: "#00ff00"
+                  }]
+                }} title='Fp' size={this.chartSize}></ForceChart>
+              </Card>
+            </Grid>
+          </Grid>
+          {
+            // </Stack>
+          }
+        </Container>
         </Stack>
+        </Paper>
       </div>
     );
   }

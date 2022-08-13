@@ -1,20 +1,24 @@
 import * as echarts from 'echarts';
+// import { Box } from '@mui/system';
+import { Box } from '@mui/material';
 import React from 'react';
 
 class ForceChart extends React.Component {
   constructor(props) {
     super(props);
   }
+
   componentDidMount() {
     // Temporary Option
-    let option = this.renderChart();
 
     this.chart = echarts.init(document.getElementById(this.props.chartId));
-    this.chart.setOption(option);
+    this.renderChart();
+    // this.chart.setOption(this.option);
   }
+
   renderChart() {
     // init option
-    let option = {
+    this.option = {
       tooltip: {
         trigger: 'axis',
         position: function (pt) {
@@ -75,16 +79,20 @@ class ForceChart extends React.Component {
 
     // FIXME: Not so elegant, maybe can be solve by using a timer
     if (this.chart !== undefined) {
-      this.chart.setOption(option);
+      this.chart.setOption(this.option);
     }
-
-    return option;
+    // return this.option;
   }
+
   render() {
     this.renderChart();
     return (
       // <div id={this.props.chartId} style={{width: 500, height: 300}}></div>
-      <div id={this.props.chartId} style={{width: this.props.size.width, height: this.props.size.height}}></div>
+      // <div id={this.props.chartId} style={{width: this.props.size.width, height: this.props.size.height}}></div>
+      <Box component="div" sx={{
+        width: this.props.size.width, 
+        height: this.props.size.height
+      }} id={this.props.chartId}></Box>
     );
   }
 }
