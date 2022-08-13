@@ -1,6 +1,5 @@
 import logo from './logo.svg';
 import './App.css';
-import * as echarts from 'echarts';
 import { Button, Card } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -17,66 +16,24 @@ import { render } from '@testing-library/react';
 import { type } from '@testing-library/user-event/dist/type';
 import { Container } from '@mui/system';
 
-class ForceChart extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-  componentDidMount() {
-    // Temporary Option
-    let option = {
-      animation: false,
-      xAxis: {
-        type: 'category',
-        data: this.props.data.x
-      },
-      yAxis: {
-        type: 'value',
-      },
-      series: [
-        {
-          data: this.props.data.y,
-          type: 'line',
-          color: this.props.color
-        }
-      ]
-    };
-
-    this.chart = echarts.init(document.getElementById(this.props.chartId));
-    this.chart.setOption(option);
-  }
-  render() {
-    let option = {
-      animation: false,
-      xAxis: {
-        type: 'category',
-        data: this.props.data.x
-      },
-      yAxis: {
-        type: 'value',
-      },
-      series: [
-        {
-          data: this.props.data.y,
-          type: 'line',
-          color: this.props.color
-        }
-      ]
-    };
-
-    // FIXME: Not so elegant, maybe can be solve by using a timer
-    if (this.chart !== undefined) {
-      this.chart.setOption(option);
-    }
-    return (
-      <div id={this.props.chartId} style={{width: 500, height: 300}}></div>
-    );
-  }
-}
+// User Defined Components
+import ForceChart from './ForceChart';
+import Clock from './Clock';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.updateRate = 100;
+    this.updateRate = 200;
+    this.chartSize = {
+      width: 485,
+      // width: 500,
+      height: 300
+    };
+    this.mainChartSize = {
+      width: 1200,
+      // height: 600
+      height: 400
+    };
     this.state = {
       running: true,
       recording: false,
@@ -88,6 +45,8 @@ class App extends React.Component {
     this.startMonitor = this.startMonitor.bind(this);
     this.stopMonitor = this.stopMonitor.bind(this);
     this.clearRecord = this.clearRecord.bind(this);
+    this.startRecord = this.startRecord.bind(this);
+    this.stopRecord = this.stopRecord.bind(this);
   }
   componentDidMount() {
     // FIXME: It seems that the update rate cannot be reach if set too high.
@@ -123,12 +82,15 @@ class App extends React.Component {
   }
   stopMonitor() {
     // TODO:
+    if (this.state.recording) {
+      this.stopRecord();
+    }
     if (this.state.running) {
       this.setState({
         running: false
       });
       clearInterval(this.timerID);
-      console.log("Stopped!")
+      console.log("Stopped!");
     }
   }
   clearRecord() {
@@ -138,6 +100,28 @@ class App extends React.Component {
       ff: [],
       fp: []
     });
+  }
+  startRecord() {
+    // TODO: Start Recording
+    if (!this.state.running) {
+      this.startMonitor();
+    }
+    this.setState({
+      recording: true
+    });
+    this.recordStartTime = new Date();
+    this.recordStartIndex = this.state.t.length;
+  }
+  stopRecord() {
+    // TODO: Stop Recording
+    if (this.state.running && this.state.recording) {
+      this.setState({
+        recording: false
+      });
+      this.recordEndTime = new Date();
+      this.recordEndIndex = this.state.t.length;
+      alert(`[Test]: ${this.recordStartTime.toLocaleString()} - ${this.recordEndTime.toLocaleString()} (${this.recordEndTime - this.recordStartTime}): Record Length = ${this.recordEndIndex - this.recordStartIndex}`);
+    }
   }
   tick() {
     // NOTE: Update data here!
@@ -153,8 +137,8 @@ class App extends React.Component {
         recording: state.recording,
         t: state.t.concat([new_t]),
         fc: state.fc.concat([new_t]),
-        ff: state.ff.concat([new_t]),
-        fp: state.fp.concat([new_t])
+        ff: state.ff.concat([0.5 * new_t]),
+        fp: state.fp.concat([0.2 * new_t])
       };
     });
   }
@@ -187,6 +171,7 @@ class App extends React.Component {
         <Stack spacing={2}>
         <Container maxWidth="sm">
         <Stack direction="row" spacing={2}>
+          <Clock />
           <Button variant="contained" color="success" size="large" onClick={this.startMonitor}>
             Start
             <PlayArrowIcon></PlayArrowIcon>  
@@ -199,7 +184,7 @@ class App extends React.Component {
             Clear
             <DeleteIcon></DeleteIcon>
           </Button>
-          <Button variant="contained" color="info" size="large">
+          <Button variant="contained" color={this.state.recording ? "info" : "action"} size="large" onClick={this.state.recording ? this.stopRecord : this.startRecord}>
             Record
             <FiberManualRecordIcon></FiberManualRecordIcon>
           </Button>
@@ -223,31 +208,74 @@ class App extends React.Component {
         <Container maxWidth="xl">
           <Card>
             <ForceChart chartId="main" data={{
-              
-            }}></ForceChart>
+              x: this.state.t,
+              y: [{
+                name: "fc",
+                data: this.state.fc,
+                color: "#ff0000"
+              }, {
+                name: "ff",
+                data: this.state.ff,
+                color: "#0000ff"
+              }, {
+                name: "fp",
+                data: this.state.fp,
+                color: "#00ff00"
+              }]
+            }} title='Force' size={this.mainChartSize}></ForceChart>
           </Card>
-        <Stack direction="row" spacing={2}>
-        <Card variant='outlined'>
-          <ForceChart chartId="Fc" data={{
-            x: this.state.t,
-            y: this.state.fc
-          }} color="#ff0000"></ForceChart>
-        </Card>
-        <Card variant='outlined'>
-          <ForceChart chartId="Ff" data={{
-            x: this.state.t,
-            y: this.state.ff
-          }} color="#0000ff"></ForceChart>
-        </Card>
-        <Card variant='outlined'>
-          <ForceChart chartId="Fp" data={{
-            x: this.state.t,
-            y: this.state.fp
-          }} color="#00ff00"></ForceChart>
-        </Card>
+          { /* <Stack direction="row" spacing={1}>
+          <Card variant='outlined'>
+            <ForceChart chartId="Fc" data={{
+              x: this.state.t,
+              y: this.state.fc
+            }} color="#ff0000" title='Fc' size={this.chartSize}></ForceChart>
+          </Card>
+          <Card variant='outlined'>
+            <ForceChart chartId="Ff" data={{
+              x: this.state.t,
+              y: this.state.ff
+            }} color="#0000ff" title='Ff' size={this.chartSize}></ForceChart>
+          </Card>
+          <Card variant='outlined'>
+            <ForceChart chartId="Fp" data={{
+              x: this.state.t,
+              y: this.state.fp
+            }} color="#00ff00" title='Fp' size={this.chartSize}></ForceChart>
+          </Card>
+          </Stack> */}
+
+          <Stack direction="row" spacing={1}>
+          <Card variant='outlined'>
+            <ForceChart chartId="Fc" data={{
+              x: this.state.t,
+              y: [{
+                data: this.state.fc,
+                color: "#ff0000"
+              }]
+            }} title='Fc' size={this.chartSize}></ForceChart>
+          </Card>
+          <Card variant='outlined'>
+            <ForceChart chartId="Ff" data={{
+              x: this.state.t,
+              y: [{
+                data: this.state.ff,
+                color: "#0000ff"
+              }]
+            }} title='Ff' size={this.chartSize}></ForceChart>
+          </Card>
+          <Card variant='outlined'>
+            <ForceChart chartId="Fp" data={{
+              x: this.state.t,
+              y: [{
+                data: this.state.fp,
+                color: "#00ff00"
+              }]
+            }} title='Fp' size={this.chartSize}></ForceChart>
+          </Card>
+          </Stack>
+          </Container>
         </Stack>
-        </Container>
-      </Stack>
       </div>
     );
   }
