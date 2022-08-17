@@ -82,13 +82,15 @@ class App extends React.Component {
       width: 485 * this.scaleFactor,
       // width: 500,
       // height: 300 * this.scaleFactor
-      height: 300
+      // height: 300
+      height: 280
     };
     this.mainChartSize = {
       width: 1100 * this.scaleFactor,
       // height: 600
       // height: 400 * this.scaleFactor
-      height: 400
+      // height: 400
+      height: 380
     };
     // alert(`chartSize = ${this.chartSize.width}x${this.chartSize.height}}`);
   }
