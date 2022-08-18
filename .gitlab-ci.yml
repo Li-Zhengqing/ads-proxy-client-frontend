@@ -32,6 +32,7 @@ deploy_pages:
   stage: deploy
   script:
     - npm install
+    - npm run-script build
     - cp build /etc/gitlab-runner/app-pages
   only:
     - master
