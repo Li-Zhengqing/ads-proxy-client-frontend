@@ -18,12 +18,15 @@ build_pages:
   script:
     - npm install
     - npm run-script build
+    - ls build
+    - cat build/index.html
 
 test_pages:
   stage: test
   script:
-    - ls build
-    - cat build/index.html
+    # - ls build
+    # - cat build/index.html
+    - echo "No test for default"
 
 deploy_pages:
   stage: deploy
