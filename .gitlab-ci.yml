@@ -33,6 +33,6 @@ deploy_pages:
   script:
     - npm install
     - npm run-script build
-    - cp build /etc/gitlab-runner/app-pages
+    - cp -r build /etc/gitlab-runner/app-pages
   only:
     - master
