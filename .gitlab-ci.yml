@@ -22,11 +22,13 @@ build_pages:
 test_pages:
   stage: test
   script:
-    - echo "No test default!"
+    - ls build
+    - cat build/index.html
 
 deploy_pages:
   stage: deploy
   script:
     - npm install
-    - npm install -g serve
-    - serve -s build
+    - cp build /etc/gitlab-runner/app-pages
+  only:
+    - master
