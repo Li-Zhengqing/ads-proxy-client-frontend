@@ -31,8 +31,9 @@ test_pages:
 deploy_pages:
   stage: deploy
   script:
-    - npm install
-    - npm run-script build
-    - cp -r build /etc/gitlab-runner/app-pages
+    # - npm install
+    # - npm run-script build
+    # - cp -r build /etc/gitlab-runner/app-pages
+    - echo "No deploy for default"
   only:
     - master
