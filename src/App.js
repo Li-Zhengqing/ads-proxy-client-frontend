@@ -20,6 +20,10 @@ import { Container } from '@mui/system';
 import ForceChart from './ForceChart';
 import Panel from './Panel';
 // import Clock from './Clock';
+import AlertComponent from './AlertComponent';
+
+// Package for tests
+import { Button, ButtonGroup } from '@mui/material';
 
 class App extends React.Component {
   /**
@@ -32,15 +36,23 @@ class App extends React.Component {
     super(props);
     this.updateRate = 200;
     this.setChartSize();
+
+    // Init app state
     this.state = {
-      running: true,
+      // running: true,
+      running: false,
       recording: false,
+      message: false,
+      status: 'offline',
       t: [],
       fc: [],
       ff: [],
       fp: [],
       fileFormat: "csv"
     }
+    
+    // Binding event handlers
+    this.setMessageOff = this.setMessageOff.bind(this);
     this.startMonitor = this.startMonitor.bind(this);
     this.stopMonitor = this.stopMonitor.bind(this);
     this.clearRecord = this.clearRecord.bind(this);
@@ -52,13 +64,14 @@ class App extends React.Component {
   componentDidMount() {
     // FIXME: It seems that the update rate cannot be reach if set too high.
     this.setState({
-      running: true,
+      // running: true,
+      running: false,
       recording: false,
     });
-    this.timerID = setInterval(
-      () => this.tick(),
-      this.updateRate
-    );
+    // this.timerID = setInterval(
+    //   () => this.tick(),
+    //   this.updateRate
+    // );
   }
 
   componentWillUnmount() {
@@ -93,6 +106,12 @@ class App extends React.Component {
       height: 380
     };
     // alert(`chartSize = ${this.chartSize.width}x${this.chartSize.height}}`);
+  }
+
+  setMessageOff() {
+    this.setState({
+      message: false
+    });
   }
   
   startMonitor() {
@@ -154,6 +173,12 @@ class App extends React.Component {
       this.recordEndTime = new Date();
       this.recordEndIndex = this.state.t.length;
       alert(`[Test]: ${this.recordStartTime.toLocaleString()} - ${this.recordEndTime.toLocaleString()} (${this.recordEndTime - this.recordStartTime}): Record Length = ${this.recordEndIndex - this.recordStartIndex}`);
+
+      // TODO:
+      this.setState({
+        status: 'recordStopped',
+        message: true
+      });
     }
   }
 
@@ -165,6 +190,10 @@ class App extends React.Component {
 
   tick() {
     // NOTE: Update data here!
+    // REVIEW: Be aware that this function substitutes state,
+    //         rather than update and merge the state.
+    //         Therefore, the update should be loaded with whole 
+    //         new state.
     this.setState((state, props) => {
       const old_t = state.t[state.t.length - 1];
       let new_t = old_t + 1;
@@ -176,6 +205,8 @@ class App extends React.Component {
         running: state.running,
         recording: state.recording,
         t: state.t.concat([new_t]),
+        status: state.status,
+        message: state.message,
         fc: state.fc.concat([new_t]),
         ff: state.ff.concat([0.5 * new_t]),
         fp: state.fp.concat([0.2 * new_t]),
@@ -213,6 +244,12 @@ class App extends React.Component {
           </Toolbar>
         </AppBar>
         <Paper>
+          <AlertComponent 
+            status={this.state.status}
+            message=""
+            snackbarOn={this.state.message}
+            handleSnackbarClose={this.setMessageOff}
+          ></AlertComponent>
         <Stack direction="column" spacing={2}>
         
         { /*
@@ -362,6 +399,46 @@ class App extends React.Component {
         </Container>
         </Stack>
         </Paper>
+        {
+          // Component for test
+          <ButtonGroup variant="contained" color="info">
+            <Button variant="contained" color='success' onClick={() => {
+              // REVIEW: Handler for connected.
+              this.setState({
+                status: 'connected',
+                message: true,
+              });
+            }}>Set Connected</Button>
+            <Button variant="contained" color='success' onClick={() => {
+              // REVIEW: Handler for disconnect.
+              this.setState({
+                status: 'offline',
+                message: true,
+              });
+            }}>Set Disconnected</Button>
+            <Button variant="contained" color='error' onClick={() => {
+              // REVIEW: Handler for connection timeout.
+              this.setState({
+                status: 'connectionTimeout',
+                message: true,
+              });
+            }}>Set Connection Timeout</Button>
+            <Button variant="contained" color='warning' onClick={() => {
+              // REVIEW: Handler for pending actions.
+              // For example: database connection and plc connection.
+              this.setState({
+                status: 'pending',
+                message: true,
+              });
+              setTimeout(() => {
+                this.setState({
+                  status: 'connected',
+                  message: true,
+                });
+              }, 10000);
+            }}>{"Set Pending for 10 seconds"}</Button>
+          </ButtonGroup>
+        }
       </div>
     );
   }
