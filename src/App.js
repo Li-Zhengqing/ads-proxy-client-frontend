@@ -36,7 +36,8 @@ class App extends React.Component {
     this.updateRate = 200;
     this.setChartSize();
     this.state = {
-      running: true,
+      connected: false,
+      running: false,
       recording: false,
       t: [],
       fc: [],
@@ -44,6 +45,8 @@ class App extends React.Component {
       fp: [],
       fileFormat: "csv",
       varList: [],
+      selectedVarList: [],
+      target_ams_id: "127.0.0.1.1.1"
     }
     this.startMonitor = this.startMonitor.bind(this);
     this.stopMonitor = this.stopMonitor.bind(this);
@@ -52,12 +55,17 @@ class App extends React.Component {
     this.stopRecord = this.stopRecord.bind(this);
     this.fileFormatSelect = this.fileFormatSelect.bind(this);
     this.queryVarList = this.queryVarList.bind(this);
+    this.syncMonitorVarList = this.syncMonitorVarList.bind(this);
+    this.handleTargetAmsIdChange = this.handleTargetAmsIdChange.bind(this);
+    this.connectPLC = this.connectPLC.bind(this);
+    this.disconnectPLC = this.disconnectPLC.bind(this);
   }
 
   componentDidMount() {
     // FIXME: It seems that the update rate cannot be reach if set too high.
     this.setState({
-      running: true,
+      connected: false,
+      running: false,
       recording: false,
     });
     this.timerID = setInterval(
@@ -68,6 +76,7 @@ class App extends React.Component {
 
   componentWillUnmount() {
     this.setState({
+      connected: false,
       running: false,
       recording: false
     });
@@ -118,6 +127,40 @@ class App extends React.Component {
     console.log(var_list);
     // return var_list;
   }
+
+  syncMonitorVarList(rowSelectionModel) {
+    this.setState({
+      selectedVarList: rowSelectionModel,
+    });
+    console.log(rowSelectionModel);
+  }
+
+  handleTargetAmsIdChange(target) {
+    this.setState({
+      target_ams_id: target,
+    });
+  }
+
+  connectPLC() {
+    // TODO: Connect to PLC action.
+    this.setState({
+      connected: true,
+    });
+    console.log(`Connected with PLC: ${this.state.target_ams_id}.`);
+  }
+
+  disconnectPLC() {
+    // TODO: Action for disconnect with PLC.
+    if (this.state.running) {
+      this.stopMonitor();
+    }
+    // Clear variable list
+    this.setState({
+      connected: false,
+      varList: [],
+    });
+    console.log('Disconnected with PLC.');
+  }
   
   startMonitor() {
     // NOTE: Start Monitor
@@ -131,6 +174,11 @@ class App extends React.Component {
       );
       console.log("Started!");
       // TODO: Clear old record
+
+      // TODO: To PLC
+      invoke("start_record", {varList: this.state.selectedVarList}).then(res => {
+        console.log(`Start Record: ${res ? "success" : "failed"}`);
+      })
     }
 
   }
@@ -146,6 +194,10 @@ class App extends React.Component {
       });
       clearInterval(this.timerID);
       console.log("Stopped!");
+
+      invoke("stop_record", {}).then(res => {
+        console.log(`Stop Record: ${res ? "success" : "failed"}`);
+      });
     }
   }
 
@@ -178,7 +230,7 @@ class App extends React.Component {
       });
       this.recordEndTime = new Date();
       this.recordEndIndex = this.state.t.length;
-      alert(`[Test]: ${this.recordStartTime.toLocaleString()} - ${this.recordEndTime.toLocaleString()} (${this.recordEndTime - this.recordStartTime}): Record Length = ${this.recordEndIndex - this.recordStartIndex}`);
+      // alert(`[Test]: ${this.recordStartTime.toLocaleString()} - ${this.recordEndTime.toLocaleString()} (${this.recordEndTime - this.recordStartTime}): Record Length = ${this.recordEndIndex - this.recordStartIndex}`);
     }
   }
 
@@ -296,9 +348,18 @@ class App extends React.Component {
                 startRecord={this.startRecord}
                 stopRecord={this.stopRecord}
                 fileFormatSelect={this.fileFormatSelect}
+                connected={this.state.connected}
+                targetAmsIdChangeHandler={this.handleTargetAmsIdChange}
+                connectHandler={this.connectPLC}
+                disconnectHandler={this.disconnectPLC}
                 />
               </Card>
-              <VarList var_list_rows={this.state.varList} refreshVarList={this.queryVarList}/>
+              <VarList 
+              connected={this.state.connected}
+              var_list_rows={this.state.varList} 
+              refreshVarList={this.queryVarList}
+              syncMonitorVarListHandler={this.syncMonitorVarList}
+              />
             {
             // </Grid>
             }

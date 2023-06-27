@@ -10,6 +10,9 @@ const columns = [
 class DataTable extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      RowSelectionModel: [],
+    };
   }
 
   render() {
@@ -24,6 +27,14 @@ class DataTable extends React.Component {
         }}
         pageSizeOptions={[5, 10]}
         checkboxSelection
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          console.log(newRowSelectionModel);
+          this.setState({
+            RowSelectionModel: newRowSelectionModel
+          });
+          this.props.syncMonitorVarListHandler(newRowSelectionModel);
+        }}
+        rowSelectionModel={this.state.RowSelectionModel}
       />
     )
   }

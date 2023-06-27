@@ -15,10 +15,13 @@ class VarList extends React.Component {
     return (
       <Container>
         <Stack direction="column">
-          <Button variant="contained" onClick={this.props.refreshVarList}>
-            <Refresh></Refresh>
+          <Button variant="contained" disabled={!this.props.connected} onClick={this.props.refreshVarList}>
+            <Refresh/> Refresh PLC Variable List
           </Button>
-          <DataTable rows={this.props.var_list_rows}>
+          <DataTable 
+          rows={this.props.var_list_rows}
+          connected={this.props.connected}
+          syncMonitorVarListHandler={this.props.syncMonitorVarListHandler}>
           </DataTable>
         </Stack>
       </Container>

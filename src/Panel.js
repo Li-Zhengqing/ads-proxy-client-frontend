@@ -1,5 +1,5 @@
 import './App.css';
-import { Button, Stack } from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
 // import { Button, Card, AppBar, Toolbar, Typography, Stack, Grid } from '@mui/material';
 // import AppBar from '@mui/material/AppBar';
 // import Toolbar from '@mui/material/Toolbar';
@@ -16,6 +16,7 @@ import { Container } from '@mui/system';
 
 import Clock from './Clock';
 import CustomizedRadios from './CustomizedButtonGroup';
+import { Lan } from '@mui/icons-material';
 
 class Panel extends React.Component {
   constructor (props) {
@@ -30,24 +31,37 @@ class Panel extends React.Component {
 
           <div></div>
           <Clock />
+          <Stack direction="row" spacing={2}>
+            <Button variant="contained" 
+            color={this.props.connected ? "success" : "action"}
+            onClick={this.props.connected ? this.props.disconnectHandler : this.props.connectHandler}>
+              <Lan></Lan> { /*Connect PLC*/ }
+            </Button>
+            <TextField 
+            id="target_ams_id" 
+            variant='outlined'
+            onChange={(event) => {
+              this.props.targetAmsIdChangeHandler(event.target.value);
+              }}/>
+          </Stack>
 
           <Stack direction="row" spacing={2}>
-            <Button variant="contained" color="success" size="large" onClick={this.props.startMonitor}>
+            <Button variant="contained" color={this.props.running ? "success" : "action"} size="large" disabled={!this.props.connected} onClick={this.props.startMonitor}>
               { /*Start */ }
               <PlayArrowIcon></PlayArrowIcon>  
             </Button>
 
-            <Button variant="contained" color="error" size="large" onClick={this.props.stopMonitor}>
+            <Button variant="contained" color={this.props.running ? "action" : "error"} size="large" disabled={!this.props.connected} onClick={this.props.stopMonitor}>
               { /*Stop*/ }
               <StopIcon></StopIcon>
             </Button>
 
-            <Button variant="contained" color="warning" size="large" onClick={this.props.clearRecord}>
+            <Button variant="contained" color="action" size="large" disabled={!this.props.connected} onClick={this.props.clearRecord}>
               { /*Clear*/ }
               <DeleteIcon></DeleteIcon>
             </Button>
 
-            <Button variant="contained" color={this.props.recording ? "info" : "action"} size="large" onClick={this.props.recording ? this.props.stopRecord : this.props.startRecord}>
+            <Button variant="contained" color={this.props.recording ? "info" : "action"} size="large" disabled={!this.props.connected} onClick={this.props.recording ? this.props.stopRecord : this.props.startRecord}>
               { /*Record*/ }
               { this.props.recording ? 
                 <FiberSmartRecordIcon /> : <FiberManualRecordIcon />
