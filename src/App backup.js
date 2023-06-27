@@ -19,10 +19,7 @@ import { Container } from '@mui/system';
 // User Defined Components
 import ForceChart from './ForceChart';
 import Panel from './Panel';
-import VarList from './VarList';
 // import Clock from './Clock';
-
-import { invoke } from '@tauri-apps/api';
 
 class App extends React.Component {
   /**
@@ -42,8 +39,7 @@ class App extends React.Component {
       fc: [],
       ff: [],
       fp: [],
-      fileFormat: "csv",
-      varList: [],
+      fileFormat: "csv"
     }
     this.startMonitor = this.startMonitor.bind(this);
     this.stopMonitor = this.stopMonitor.bind(this);
@@ -51,7 +47,6 @@ class App extends React.Component {
     this.startRecord = this.startRecord.bind(this);
     this.stopRecord = this.stopRecord.bind(this);
     this.fileFormatSelect = this.fileFormatSelect.bind(this);
-    this.queryVarList = this.queryVarList.bind(this);
   }
 
   componentDidMount() {
@@ -99,25 +94,6 @@ class App extends React.Component {
     };
     // alert(`chartSize = ${this.chartSize.width}x${this.chartSize.height}}`);
   }
-
-  queryVarList() {
-    // TODO: Test tauri api
-    let var_list = [];
-    invoke("query_variable_list", {}).then(res => {
-      console.log(res);
-      // alert(var_list);
-      for(let id in res) {
-        var_list.push({id: id, name: res[id]});
-      }
-      // var_list = res.map(name => ({"id": 0, "name": name}));
-      console.log(var_list);
-      this.setState({
-        varList: var_list
-      });
-    });
-    console.log(var_list);
-    // return var_list;
-  }
   
   startMonitor() {
     // NOTE: Start Monitor
@@ -132,7 +108,6 @@ class App extends React.Component {
       console.log("Started!");
       // TODO: Clear old record
     }
-
   }
 
   stopMonitor() {
@@ -196,7 +171,7 @@ class App extends React.Component {
       if (isNaN(new_t)) {
         new_t = 0;
       }
-      // console.log(this.state);
+      console.log(this.state);
       return {
         running: state.running,
         recording: state.recording,
@@ -231,7 +206,7 @@ class App extends React.Component {
         }
         <AppBar position="static">
           <Toolbar>
-            <Typography variant="h5" component="h5">ADS Proxy Client</Typography>
+            <Typography variant="h5" component="h5">Cutting Force Monitor</Typography>
             {
               // <Clock />
             }
@@ -282,9 +257,27 @@ class App extends React.Component {
           }} color="#00ff00"></ForceChart>
         */ }
         <Container maxWidth="xl">
-          {
-            // <Grid container spacing={1}>
-          }
+          <Grid container spacing={1}>
+            <Grid item xs={9}>
+              <Card>
+                <ForceChart chartId="main" data={{
+                  x: this.state.t,
+                  y: [{
+                    name: "fc",
+                    data: this.state.fc,
+                    color: "#ff0000"
+                  }, {
+                    name: "ff",
+                    data: this.state.ff,
+                    color: "#0000ff"
+                  }, {
+                    name: "fp",
+                    data: this.state.fp,
+                    color: "#00ff00"
+                  }]
+                }} title='Force' size={this.mainChartSize}></ForceChart>
+              </Card>
+            </Grid>
             <Grid item xs={3}>
               <Card>
                 <Panel 
@@ -298,10 +291,7 @@ class App extends React.Component {
                 fileFormatSelect={this.fileFormatSelect}
                 />
               </Card>
-              <VarList var_list_rows={this.state.varList} refreshVarList={this.queryVarList}/>
-            {
-            // </Grid>
-            }
+            </Grid>
           {
             // </Grid>
           }
@@ -332,8 +322,6 @@ class App extends React.Component {
           {
             // <Grid container spacing={1}>
           }
-
-            {/*
             <Grid item xs={4}>
               <Card variant='outlined'>
                 <ForceChart chartId="Fc" data={{
@@ -367,7 +355,6 @@ class App extends React.Component {
                 }} title='Fp' size={this.chartSize}></ForceChart>
               </Card>
             </Grid>
-            */}
           </Grid>
           {
             // </Stack>

@@ -25,34 +25,37 @@ class Panel extends React.Component {
   render() {
     return (
         <Container maxWidth="sm">
+        { /*<Stack direction="column" spacing={2}>*/ }
         <Stack direction="column" spacing={2}>
 
           <div></div>
-
           <Clock />
 
-          <Button variant="contained" color="success" size="large" onClick={this.props.startMonitor}>
-            Start
-            <PlayArrowIcon></PlayArrowIcon>  
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button variant="contained" color="success" size="large" onClick={this.props.startMonitor}>
+              { /*Start */ }
+              <PlayArrowIcon></PlayArrowIcon>  
+            </Button>
 
-          <Button variant="contained" color="error" size="large" onClick={this.props.stopMonitor}>
-            Stop
-            <StopIcon></StopIcon>
-          </Button>
+            <Button variant="contained" color="error" size="large" onClick={this.props.stopMonitor}>
+              { /*Stop*/ }
+              <StopIcon></StopIcon>
+            </Button>
 
-          <Button variant="contained" color="warning" size="large" onClick={this.props.clearRecord}>
-            Clear
-            <DeleteIcon></DeleteIcon>
-          </Button>
+            <Button variant="contained" color="warning" size="large" onClick={this.props.clearRecord}>
+              { /*Clear*/ }
+              <DeleteIcon></DeleteIcon>
+            </Button>
 
-          <Button variant="contained" color={this.props.recording ? "info" : "action"} size="large" onClick={this.props.recording ? this.props.stopRecord : this.props.startRecord}>
-            Record
-            { this.props.recording ? 
-              <FiberSmartRecordIcon /> : <FiberManualRecordIcon />
-              // <FiberManualRecordIcon></FiberManualRecordIcon>
-            }
-          </Button>
+            <Button variant="contained" color={this.props.recording ? "info" : "action"} size="large" onClick={this.props.recording ? this.props.stopRecord : this.props.startRecord}>
+              { /*Record*/ }
+              { this.props.recording ? 
+                <FiberSmartRecordIcon /> : <FiberManualRecordIcon />
+                // <FiberManualRecordIcon></FiberManualRecordIcon>
+              }
+            </Button>
+            
+          </Stack>
 
           <CustomizedRadios handleChange={this.props.fileFormatSelect}></CustomizedRadios>
           <div></div>
