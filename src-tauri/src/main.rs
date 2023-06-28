@@ -132,19 +132,24 @@ fn record_backend() {
     info!("Device setup!");
 
     // TODO: Multi-handlers
-    let handle = Handle::new(device, "MAIN.counter").unwrap();
-    // let control_block = CONTROL_BLOCK.clone();
-    // let control_block_inner = control_block.lock().unwrap();
+    // let handle = Handle::new(device, "MAIN.counter").unwrap();
+    let control_block = CONTROL_BLOCK.clone();
+    let control_block_inner = control_block.lock().unwrap();
 
+    let mut var_index_list: Vec<usize> = Vec::new();
+    if let RecorderState::Recording(index_list) = &control_block_inner.state {
+      var_index_list = index_list.clone();
+    }
+    drop(control_block_inner);
     // TODO: Here
 
-    /*
-    let handle: Vec<Handle<'_>> = Vec::new();
+    let mut handles: Vec<Handle<'_>> = Vec::new();
     let plc_var_list = query_variable_list();
-    for i in var_index_list.clone() {
+    for i in var_index_list {
       // control_block_inner.record_var_list.push(plc_var_list.get(i).unwrap().to_string());
+      let handle = Handle::new(device, &plc_var_list[i]).unwrap();
+      handles.push(handle);
     }
-    */
 
     // let fp: File = File::create("./data.csv").unwrap();
     let mut fp: File;
@@ -161,15 +166,29 @@ fn record_backend() {
     let mut record_flag: bool = true;
     while record_flag {
 
+      // let values: Vec<i16> = Vec::new();
+      // for _ in handles.iter() {
+      //   values.push(0);
+      // }
       for i in 0..250 {
           // TODO: Persistent data
-          let value: i16 = handle.read_value().unwrap();
+          // let value: i16 = handle.read_value().unwrap();
           // println!("[{}\t]: Value MAIN.counter = {}", i, value);
-          fp.write_all((value.to_string() + ",\n").as_bytes()).expect("Failed when recording.");
-          if value != prev_value + 1 {
-              // warn!("[{}]: Data lost detected!", i);
+          // fp.write_all((value.to_string() + ",\n").as_bytes()).expect("Failed when recording.");
+          // if value != prev_value + 1 {
+          //     // warn!("[{}]: Data lost detected!", i);
+          // }
+          // prev_value = value;
+          let mut values: Vec<i16> = Vec::new();
+          let mut data_entry = String::new();
+          for handle in handles.iter() {
+            let value: i16 = handle.read_value().unwrap();
+            data_entry = data_entry + &value.to_string() + ", ";
+            values.push(value);
           }
-          prev_value = value;
+          data_entry += "\n";
+          fp.write_all(data_entry.as_bytes()).expect("Failed when recording.")
+
       }
 
       let control_block = CONTROL_BLOCK.clone();
