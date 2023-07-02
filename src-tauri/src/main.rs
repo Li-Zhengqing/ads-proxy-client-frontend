@@ -32,6 +32,13 @@ struct ClientControlBlock {
   // ads_device: Option<ads::Device<'static>>,
 }
 
+struct VisualizationData {
+  time_stamp: u32,
+  data: Vec<Vec<f64>>,
+}
+
+const MAX_VIS_LENGTH: usize = 10000;
+
 lazy_static! {
   static ref CONTROL_BLOCK: Arc<Mutex<ClientControlBlock>> = Arc::new(
     Mutex::new(ClientControlBlock {
@@ -41,11 +48,17 @@ lazy_static! {
       record_job: Option::None,
       // ads_device: Option::None,
     }));
+
+  static ref VISUALIZATION_DATA: Arc<Mutex<VisualizationData>> = Arc::new(
+    Mutex::new(VisualizationData { time_stamp:0, data: Vec::new() })
+  );
+
 }
 
 #[tauri::command]
 fn start_record(var_list: Vec<String>) -> bool {
   let var_list: Vec<usize> = var_list.iter().map(|x| x.parse().unwrap()).collect();
+  let visual_dim = var_list.len() + 1;
   println!("Variable List Index: {:?}", var_list);
   info!("Start Recorder");
 
@@ -61,6 +74,15 @@ fn start_record(var_list: Vec<String>) -> bool {
   control_block_inner.state = RecorderState::Recording(var_list);
   control_block_inner.record_job = Some(record_job);
 
+  // SECTION: Handle visualization data.
+  let visual_data = VISUALIZATION_DATA.clone();
+  let mut visual_data_inner = visual_data.lock().unwrap();
+  visual_data_inner.time_stamp = 0;
+  for _ in 0..visual_dim {
+    visual_data_inner.data.push(Vec::<f64>::new());
+  }
+
+
   return true;
 }
 
@@ -74,6 +96,15 @@ fn stop_record() -> bool {
   // control_block_inner.record_job.unwrap().join();
   // let record_job = control_block_inner.record_job.as_mut();
   // record_job.unwrap().join();
+
+  // SECTION: Handle visualization data.
+  let visual_data = VISUALIZATION_DATA.clone();
+  let mut visual_data_inner = visual_data.lock().unwrap();
+  visual_data_inner.time_stamp = 0;
+  let visual_dim = visual_data_inner.data.len();
+  for _ in 0..visual_dim {
+    visual_data_inner.data.pop();
+  }
 
   return true;
 }
@@ -110,6 +141,7 @@ fn query_variable_list() -> Vec<String> {
 
     let symbols: Vec<String> = symbols.iter().map(|item| String::from(&item.name)).collect();
     // symbol_name_list
+
     symbols
 }
 
@@ -187,7 +219,10 @@ fn record_backend() {
             values.push(value);
           }
           data_entry += "\n";
-          fp.write_all(data_entry.as_bytes()).expect("Failed when recording.")
+          fp.write_all(data_entry.as_bytes()).expect("Failed when recording.");
+
+          // SECTION: Handle visualization data.
+          update_visualization_data(values);
 
       }
 
@@ -202,6 +237,38 @@ fn record_backend() {
     }
 }
 
+fn update_visualization_data(data: Vec<i16>) {
+  // TODO:
+  let visual_data = VISUALIZATION_DATA.clone();
+  let mut visual_data_inner = visual_data.lock().unwrap();
+  let dim = visual_data_inner.data.len();
+  let time_stamp = visual_data_inner.time_stamp;
+  if dim == 0 {
+    return;
+  }
+  visual_data_inner.data[0].push(time_stamp.into());
+  while visual_data_inner.data[0].len() > MAX_VIS_LENGTH {
+    visual_data_inner.data[0].remove(0);
+  }
+
+  visual_data_inner.time_stamp += 1;
+  for i in 1..dim {
+    visual_data_inner.data[i].push(data[i - 1].into());
+    while visual_data_inner.data[i].len() > MAX_VIS_LENGTH {
+      visual_data_inner.data[i].remove(0);
+    }
+  }
+}
+
+#[tauri::command]
+fn get_visualization_data() -> Vec<Vec<f64>> {
+  // TODO:
+  let visual_data = VISUALIZATION_DATA.clone();
+  let visual_data_inner = visual_data.lock().unwrap();
+  let data = visual_data_inner.data.clone();
+  return data;
+}
+
 fn backend() {
   // TODO: Main routine here.
   /* SECTION
@@ -210,7 +277,6 @@ fn backend() {
    * 3. Start and stop monitor
    * 4. Data recording
    */
-  
 }
 
 fn main() {
@@ -231,7 +297,8 @@ fn main() {
     println!("Logger initialization done!");
 
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![start_record, stop_record, query_variable_list])
+    .invoke_handler(tauri::generate_handler![
+      start_record, stop_record, query_variable_list, get_visualization_data])
     // .invoke_handler(tauri::generate_handler![query_variable_list])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
