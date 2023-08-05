@@ -3,7 +3,7 @@ import * as echarts from 'echarts';
 import { Box } from '@mui/material';
 import React from 'react';
 
-class ForceChart extends React.Component {
+class Chart extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -22,7 +22,7 @@ class ForceChart extends React.Component {
       tooltip: {
         trigger: 'axis',
         position: function (pt) {
-          return [pt[0], '10%'];
+          return [pt[0], '100%'];
         }
       },
       toolbox: {
@@ -53,12 +53,14 @@ class ForceChart extends React.Component {
       yAxis: {
         type: 'value',
       },
+      /*
       legend: {
         // orient: 'vertical',
         // right: 10,
         // top: 'center',
         data: this.props.data.y.map((item) => (item.name))
       },
+      */
       title: {
         left: 'center',
         text: this.props.title
@@ -72,6 +74,7 @@ class ForceChart extends React.Component {
       ] */
       series: this.props.data.y.map((item) => ({
         data: item.data,
+        symbol: 'none',
         type: 'line',
         color: item.color
       }))
@@ -168,4 +171,4 @@ class ForceChart extends React.Component {
   }
 }
 
-export default ForceChart;
+export default Chart;

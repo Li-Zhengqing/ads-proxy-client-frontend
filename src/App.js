@@ -17,7 +17,7 @@ import React from 'react';
 import { Container } from '@mui/system';
 
 // User Defined Components
-import ForceChart from './ForceChart';
+import Chart from './Chart';
 import Panel from './Panel';
 import VarList from './VarList';
 // import Clock from './Clock';
@@ -33,7 +33,7 @@ class App extends React.Component {
    */
   constructor(props) {
     super(props);
-    this.updateRate = 200;
+    this.updateRate = 250;
     this.setChartSize();
     this.state = {
       connected: false,
@@ -46,6 +46,7 @@ class App extends React.Component {
       fileFormat: "csv",
       varList: [],
       selectedVarList: [],
+      visual_data: [],
       target_ams_id: "127.0.0.1.1.1"
     }
     this.startMonitor = this.startMonitor.bind(this);
@@ -93,11 +94,11 @@ class App extends React.Component {
     this.scaleFactor = this.pageSize.width / 1536;
     // alert(`Page Size: ${this.pageSize.width} x ${this.pageSize.height}`);
     this.chartSize = {
-      width: 485 * this.scaleFactor,
+      width: 1500 * this.scaleFactor,
       // width: 500,
       // height: 300 * this.scaleFactor
       // height: 300
-      height: 280
+      height: 200
     };
     this.mainChartSize = {
       width: 1100 * this.scaleFactor,
@@ -169,7 +170,8 @@ class App extends React.Component {
         running: true
       })
       this.timerID = setInterval(
-        () => this.tick(),
+        // () => this.tick(),
+        () => this.updateData(),
         this.updateRate
       );
       console.log("Started!");
@@ -241,7 +243,7 @@ class App extends React.Component {
   }
 
   tick() {
-    // NOTE: Update data here!
+    // note: update data here!
     this.setState((state, props) => {
       const old_t = state.t[state.t.length - 1];
       let new_t = old_t + 1;
@@ -258,6 +260,17 @@ class App extends React.Component {
         fp: state.fp.concat([0.2 * new_t]),
         fileFormat: state.fileFormat
       };
+    });
+  }
+
+  updateData() {
+    let new_data = null;
+    invoke('get_visualization_data', {}).then(res => {
+      new_data = res;
+      console.log(`new data: ${new_data}`);
+      this.setState({
+        visual_data: new_data,
+      });
     });
   }
 
@@ -333,6 +346,33 @@ class App extends React.Component {
             y: [150, 230, 224, 218, 135, 147, 260]
           }} color="#00ff00"></ForceChart>
         */ }
+        {/*
+        <Chart chartId="test" data={{
+          x: [1, 2, 3, 4, 5],
+          y: [{
+            name: 'test',
+            color: "#fc0000",
+            data: [10, 0, 15, 7, 8],
+          }],
+        }} title="test" size={this.chartSize}/>
+      */}
+        {
+          this.state.running ? (this.state.selectedVarList.map((var_index, i) => {
+            // console.log(this.state.varList);
+            let variable = this.state.varList[var_index].name;
+            console.log(this.state.visual_data);
+            // console.log(this.state.visual_data[0]);
+            // console.log(this.state.visual_data[1]);
+            return (<Chart chartId={variable} data={{
+              x: this.state.visual_data[0],
+              y: [{
+                name: variable,
+                color: "#fc0000",
+                data: this.state.visual_data[i + 1],
+              }],
+            }} title={variable} size={this.chartSize}/>);
+          }) ) : <div></div>
+        }
         <Container maxWidth="xl">
           {
             // <Grid container spacing={1}>
@@ -354,12 +394,14 @@ class App extends React.Component {
                 disconnectHandler={this.disconnectPLC}
                 />
               </Card>
-              <VarList 
+              {
+              this.state.running ? <div></div> : (<VarList 
               connected={this.state.connected}
               var_list_rows={this.state.varList} 
               refreshVarList={this.queryVarList}
               syncMonitorVarListHandler={this.syncMonitorVarList}
-              />
+              />)
+              }
             {
             // </Grid>
             }
